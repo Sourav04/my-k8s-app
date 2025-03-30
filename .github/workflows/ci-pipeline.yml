@@ -1,0 +1,81 @@
+name: CI Setup for Building Image, Deploying App, and Testing
+
+on:
+  push:
+    branches:
+      - '*'  # Trigger the workflow on every push to any branch
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx (for building images)
+        uses: docker/setup-buildx-action@v1
+
+      - name: Set up KIND
+        uses: engineerd/setup-kind@v1
+        with:
+          kind-version: "v0.17.0"
+
+      # Generate a unique image tag based on the commit SHA
+      - name: Set Image Tag
+        id: img_tag
+        run: |
+          # Use Git commit SHA as the image tag
+          IMAGE_TAG=$(echo $GITHUB_SHA | head -c 8)  # First 8 characters of the commit SHA
+          echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
+
+      - name: Build Docker Image
+        run: |
+          docker build -t my-app:${{ env.IMAGE_TAG }} .
+
+      - name: Create KIND Cluster
+        run: |
+          kind create cluster --name test-cluster --wait 5m
+
+      - name: Load Docker Image into KIND
+        run: |
+          kind load docker-image my-app:${{ env.IMAGE_TAG }} --name test-cluster
+
+      - name: Deploy to KIND cluster
+        run: |
+          kubectl apply -f k8s-resources/deployment.yaml
+          kubectl apply -f k8s-resources/service.yaml
+
+      - name: Install KUTTL
+        run: |
+          curl -sSL https://github.com/kudobuilder/kuttl/releases/download/v0.5.0/kuttl-linux-amd64 -o kuttl
+          chmod +x ./kuttl
+          sudo mv kuttl /usr/local/bin/
+
+      - name: Run KUTTL Tests
+        run: |
+          kuttl test ./kuttl-tests
+
+      - name: Install Conftest
+        run: |
+          curl -LO https://github.com/open-policy-agent/conftest/releases/download/v0.30.0/conftest_0.30.0_Linux_x86_64.tar.gz
+          tar -xvf conftest_0.30.0_Linux_x86_64.tar.gz
+          sudo mv conftest /usr/local/bin/
+
+      - name: Run Conftest
+        run: |
+          conftest test ./k8s-resources/deployment.yaml --policy ./policies/example.rego
+
+      - name: Install Trivy (Image Scanning Tool)
+        run: |
+          curl -sfL https://github.com/aquasecurity/trivy/releases/download/v0.35.0/trivy_0.35.0_Linux-x86_64.tar.gz -o trivy.tar.gz
+          tar -xvzf trivy.tar.gz
+          sudo mv trivy /usr/local/bin/
+
+      - name: Scan Docker Image with Trivy
+        run: |
+          trivy image my-app:${{ env.IMAGE_TAG }}
+
+      - name: Clean up KIND Cluster
+        run: |
+          kind delete cluster --name test-cluster
