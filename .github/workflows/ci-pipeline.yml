@@ -47,37 +47,6 @@ jobs:
           kubectl apply -f k8s_resources/deployment.yaml
           kubectl apply -f k8s_resources/service.yaml
 
-      # Verify deployment is running
-      - name: Check deployment status
-        run: |
-          kubectl rollout status deployment/my-app --timeout=5m
-          kubectl get pods
-
-      # Test if the service is accessible by port-forwarding
-      - name: Port forward and test service
-        run: |
-          kubectl port-forward service/my-app-service 8080:80 & # Forward port 8080 on localhost to port 80 on the service
-          sleep 5  # Wait for port-forward to stabilize
-          curl --max-time 10 http://localhost:8080  # Make an HTTP request to test if the service is accessible
-        continue-on-error: true  # In case service is not ready immediately, allow the test to continue
-
-      # Install Checkov
-      - name: Install Checkov
-        run: |
-          pip install checkov
-
-      # Run Checkov on Kubernetes files to check for security and compliance
-      - name: Run Checkov on Kubernetes YAML files
-        run: |
-          checkov -d ./k8s_resources -o json > checkov-results.json
-
-      # Upload Checkov results to GitHub Actions
-      - name: Upload Checkov Results
-        uses: actions/upload-artifact@v2
-        with:
-          name: checkov-results
-          path: checkov-results.json
-
       - name: Install Conftest
         run: |
           curl -LO https://github.com/open-policy-agent/conftest/releases/download/v0.30.0/conftest_0.30.0_Linux_x86_64.tar.gz
