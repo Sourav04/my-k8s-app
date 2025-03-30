@@ -50,7 +50,9 @@ jobs:
       - name: Install KUTTL
         run: |
           curl -sSL https://github.com/kudobuilder/kuttl/releases/download/v0.5.0/kuttl-linux-amd64 -o kuttl
-          chmod +x ./kuttl
+          ls -l kuttl  # List the downloaded file to verify it's there
+          file kuttl    # Check the type of the downloaded file
+          chmod +x kuttl
           sudo mv kuttl /usr/local/bin/
 
       - name: Run KUTTL Tests
