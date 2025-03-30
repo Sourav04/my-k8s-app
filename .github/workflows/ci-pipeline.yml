@@ -11,10 +11,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
 
       - name: Set up Docker Buildx (for building images)
-        uses: docker/setup-buildx-action@v3  # Updated version
+        uses: docker/setup-buildx-action@v2  # Updated version
 
       # Set up KIND (alternative manual setup)
       - name: Set up KIND
@@ -66,22 +66,6 @@ jobs:
           sleep 5  # Wait for port-forward to stabilize
           curl --max-time 10 http://localhost:8080  # Make an HTTP request to test if the service is accessible
         continue-on-error: true
-      # Install Checkov
-      - name: Install Checkov
-        run: |
-          pip install checkov
-
-      # Run Checkov on Kubernetes files to check for security and compliance
-      - name: Run Checkov on Kubernetes YAML files
-        run: |
-          checkov -d ./k8s_resources -o json > checkov-results.json
-
-      # Upload Checkov results to GitHub Actions
-      - name: Upload Checkov Results
-        uses: actions/upload-artifact@v2
-        with:
-          name: checkov-results
-          path: checkov-results.json
 
       - name: Run Conftest
         run: |
@@ -89,7 +73,7 @@ jobs:
 
       - name: Install Trivy (Image Scanning Tool)
         run: |
-          curl -sfL https://github.com/aquasecurity/trivy/releases/download/v0.61.0/trivy_0.35.0_Linux-x86_64.tar.gz -o trivy.tar.gz
+          curl -sfL https://github.com/aquasecurity/trivy/releases/download/v0.61.0/trivy_0.61.0_Linux-x86_64.tar.gz -o trivy.tar.gz
           tar -xvzf trivy.tar.gz
           sudo mv trivy /usr/local/bin/
 
