@@ -47,18 +47,19 @@ jobs:
           kubectl apply -f k8s_resources/deployment.yaml
           kubectl apply -f k8s_resources/service.yaml
 
-      - name: Install KUTTL using wget
+      - name: Install KUTTL
         run: |
-          wget https://github.com/kudobuilder/kuttl/releases/download/v0.6.0/kuttl-linux-amd64 -O kuttl
+          curl -sSL -o kuttl https://github.com/kudobuilder/kuttl/releases/download/v0.5.0/kuttl-linux-amd64
           ls -l kuttl  # Verify the downloaded file exists
           file kuttl   # Check the type of the downloaded file
+          file kuttl-linux-amd64  # Verify the file type and contents
           chmod +x kuttl
           sudo mv kuttl /usr/local/bin/
+
 
       - name: Run KUTTL Tests
         run: |
           /usr/local/bin/kuttl test ./kuttl-tests
-
 
       - name: Install Conftest
         run: |
