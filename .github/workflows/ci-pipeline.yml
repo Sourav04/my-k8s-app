@@ -14,18 +14,19 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Set up Docker Buildx (for building images)
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2  # Updated version
 
+      # Set up KIND (alternative manual setup)
       - name: Set up KIND
-        uses: engineerd/setup-kind@v1
-        with:
-          kind-version: "v0.17.0"
+        run: |
+          curl -Lo kind https://github.com/kubernetes-sigs/kind/releases/download/v0.17.0/kind-linux-amd64
+          chmod +x kind
+          sudo mv kind /usr/local/bin/
 
       # Generate a unique image tag based on the commit SHA
       - name: Set Image Tag
         id: img_tag
         run: |
-          # Use Git commit SHA as the image tag
           IMAGE_TAG=$(echo $GITHUB_SHA | head -c 8)  # First 8 characters of the commit SHA
           echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
 
