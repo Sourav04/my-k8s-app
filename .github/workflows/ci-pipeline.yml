@@ -42,30 +42,18 @@ jobs:
         run: |
           kind load docker-image my-app:${{ env.IMAGE_TAG }} --name test-cluster
 
-      - name: Deploy to KIND cluster
+      - name: Deploy to KIND cluster and validate
         run: |
           kubectl apply -f k8s_resources/deployment.yaml
           kubectl apply -f k8s_resources/service.yaml
+          kubectl rollout status deployment/my-app --timeout=5m
+          kubectl get pods
 
       - name: Install Conftest
         run: |
           curl -LO https://github.com/open-policy-agent/conftest/releases/download/v0.30.0/conftest_0.30.0_Linux_x86_64.tar.gz
           tar -xvf conftest_0.30.0_Linux_x86_64.tar.gz
           sudo mv conftest /usr/local/bin/
-
-      # Verify deployment is running
-      - name: Check deployment status
-        run: |
-          kubectl rollout status deployment/my-app --timeout=5m
-          kubectl get pods
-
-      # Test if the service is accessible by port-forwarding
-      - name: Port forward and test service
-        run: |
-          kubectl port-forward service/my-app-service 8080:80 & # Forward port 8080 on localhost to port 80 on the service
-          sleep 5  # Wait for port-forward to stabilize
-          curl --max-time 10 http://localhost:8080  # Make an HTTP request to test if the service is accessible
-        continue-on-error: true
 
       - name: Run Conftest
         run: |
