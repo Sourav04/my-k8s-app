@@ -44,8 +44,8 @@ jobs:
 
       - name: Deploy to KIND cluster
         run: |
-          kubectl apply -f k8s-resources/deployment.yaml
-          kubectl apply -f k8s-resources/service.yaml
+          kubectl apply -f k8s_resources/deployment.yaml
+          kubectl apply -f k8s_resources/service.yaml
 
       - name: Install KUTTL
         run: |
@@ -65,7 +65,7 @@ jobs:
 
       - name: Run Conftest
         run: |
-          conftest test ./k8s-resources/deployment.yaml --policy ./policies/example.rego
+          conftest test ./k8s_resources/deployment.yaml --policy ./policies/example.rego
 
       - name: Install Trivy (Image Scanning Tool)
         run: |
